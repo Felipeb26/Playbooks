@@ -4,10 +4,6 @@
   become: true
 
   tasks:
-    - name: Update packages
-      ansible.builtin.apt:
-        update_cache: true
-
     - name: Down Compose Projects
       ansible.builtin.shell: |
         docker compose ls -q | xargs -r -I{} docker compose -p "{}" down
