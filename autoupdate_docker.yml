@@ -17,7 +17,11 @@
 
     - name: Find Compose files
       ansible.builtin.find:
-        paths: /
+        paths:
+          - /opt
+          - /srv
+          - /home
+          - /root
         patterns:
           - "compose.y*ml"
           - "docker-compose.y*ml"
