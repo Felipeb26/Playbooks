@@ -1,22 +1,11 @@
+```yaml
 ---
 - name: Update All
   hosts: media
   become: true
 
   tasks:
-    - name: Down Compose Projects
-      ansible.builtin.shell: |
-        docker compose ls -q | xargs -r -I{} docker compose -p "{}" down
-      changed_when: true
-
-    - name: Remove unused Docker images
-      ansible.builtin.command:
-        cmd: docker image prune -f
-      register: prune_result
-      changed_when: "'Total reclaimed space: 0B' not in prune_result.stdout"
-
     - name: Find Compose files
-      become: true
       ansible.builtin.find:
         paths:
           - /opt
@@ -27,10 +16,6 @@
           - "compose.y*ml"
           - "docker-compose.y*ml"
         recurse: true
-        excludes:
-          - "proc"
-          - "sys"
-          - "dev"
       register: compose_files
 
     - name: Show Compose files
@@ -38,10 +23,21 @@
         msg: "{{ item.path }}"
       loop: "{{ compose_files.files }}"
 
-    - name: Start Compose projects
-      ansible.builtin.shell: |
-        cd "{{ item.path | dirname }}"
-        docker compose -f "{{ item.path }}" up -d
+    - name: Pull latest images
+      ansible.builtin.command:
+        cmd: docker compose -f "{{ item.path }}" pull
       loop: "{{ compose_files.files }}"
       loop_control:
         label: "{{ item.path }}"
+
+    - name: Recreate Compose projects
+      ansible.builtin.command:
+        cmd: docker compose -f "{{ item.path }}" up -d --remove-orphans
+      loop: "{{ compose_files.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Remove unused Docker images
+      ansible.builtin.command:
+        cmd: docker image prune -f
+```
