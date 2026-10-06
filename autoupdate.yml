@@ -1,0 +1,15 @@
+---
+- name: Update All
+  hosts: media
+  become: true
+
+  tasks:
+    - name: Update packages
+      become: true
+      ansible.builtin.shell: apt update
+    - name: Down Compose Projects
+      ansible.builtin.shell: docker compose ls -q | xargs -I{} docker compose -p {} down
+    - name: Remove Image
+      ansible.builtin.shell: docker image prune -f
+    - name: Install Compose using new images
+      ansible.builtin.shell: find / -xdev \( -name 'compose.y*ml' -o -name 'docker-compose.y*ml' \) 2>/dev/null | xargs -I{} docker compose -f "{}" up -d
