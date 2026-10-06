@@ -5,11 +5,39 @@
 
   tasks:
     - name: Update packages
-      become: true
-      ansible.builtin.shell: apt update
+      ansible.builtin.apt:
+        update_cache: true
+
     - name: Down Compose Projects
-      ansible.builtin.shell: docker compose ls -q | xargs -I{} docker compose -p {} down
-    - name: Remove Image
-      ansible.builtin.shell: docker image prune -f
-    - name: Install Compose using new images
-      ansible.builtin.shell: find / -xdev \( -name 'compose.y*ml' -o -name 'docker-compose.y*ml' \) 2>/dev/null | xargs -I{} docker compose -f "{}" up -d
+      ansible.builtin.shell: |
+        docker compose ls -q | xargs -r -I{} docker compose -p "{}" down
+      changed_when: true
+
+    - name: Remove unused Docker images
+      ansible.builtin.command:
+        cmd: docker image prune -f
+      register: prune_result
+      changed_when: "'Total reclaimed space: 0B' not in prune_result.stdout"
+
+    - name: Find Compose files
+      ansible.builtin.find:
+        paths: /
+        patterns:
+          - "compose.yml"
+          - "compose.yaml"
+          - "docker-compose.yml"
+          - "docker-compose.yaml"
+        recurse: true
+        excludes:
+          - "proc"
+          - "sys"
+          - "dev"
+      register: compose_files
+
+    - name: Start Compose projects
+      ansible.builtin.shell: |
+        cd "{{ item.path | dirname }}"
+        docker compose -f "{{ item.path }}" up -d
+      loop: "{{ compose_files.files }}"
+      loop_control:
+        label: "{{ item.path }}"
