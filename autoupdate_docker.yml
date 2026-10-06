@@ -19,16 +19,19 @@
       ansible.builtin.find:
         paths: /
         patterns:
-          - "compose.yml"
-          - "compose.yaml"
-          - "docker-compose.yml"
-          - "docker-compose.yaml"
+          - "compose.y*ml"
+          - "docker-compose.y*ml"
         recurse: true
         excludes:
           - "proc"
           - "sys"
           - "dev"
       register: compose_files
+
+    - name: Show Compose files
+      ansible.builtin.debug:
+        msg: "{{ item.path }}"
+      loop: "{{ compose_files.files }}"
 
     - name: Start Compose projects
       ansible.builtin.shell: |
