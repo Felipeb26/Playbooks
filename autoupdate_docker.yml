@@ -1,4 +1,3 @@
-```yaml
 ---
 - name: Update All
   hosts: media
@@ -40,4 +39,3 @@
     - name: Remove unused Docker images
       ansible.builtin.command:
         cmd: docker image prune -f
-```
