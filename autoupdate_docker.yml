@@ -16,6 +16,7 @@
       changed_when: "'Total reclaimed space: 0B' not in prune_result.stdout"
 
     - name: Find Compose files
+      become: true
       ansible.builtin.find:
         paths:
           - /opt
